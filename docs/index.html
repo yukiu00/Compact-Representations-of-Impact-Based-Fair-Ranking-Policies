@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compact Fair-Ranking Policies</title>
+<meta name="description" content="Compact Representations of Impact-Based Fair-Ranking Policies (NeurIPS 2026). A fair-ranking policy stored as a few item-indexed dual vectors: up to 2,596× less deployment storage, with the welfare preserved.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&family=STIX+Two+Text:ital@1&family=Noto+Sans+Math&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: one left-aligned column. Prose is held to 42rem, clips and figures to 62rem.
+     Every section is a claim, a short paragraph and one looping clip from the talk.
+     Colours and type follow the talk's animations: blue = what we store, orange = what existing methods store. */
+  --paper: #FFFFFF;
+  --ink: #16202E;
+  --muted: #5B6676;
+  --hair: #D9DEE6;
+  --panel: #F2F4F7;
+  --blue: #1D4ED8;
+  --blue-soft: #E7EEFC;
+  --orange: #C2410C;
+  --orange-soft: #FCEBDF;
+  --font-display: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-math: 'STIX Two Text', 'Times New Roman', Times, serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --prose: 42rem;
+  --wide: 62rem;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--font-body); font-size: 1.0625rem; line-height: 1.62; font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+main, header.hero { max-width: calc(var(--wide) + 3rem); margin: 0 auto; padding: 0 1.5rem; }
+a { color: var(--blue); text-underline-offset: 0.18em; }
+a:focus-visible, button:focus-visible, video:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 6px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+p { margin: 0; max-width: var(--prose); }
+.m { font-family: var(--font-math); font-style: italic; font-size: 1.08em; white-space: nowrap; }
+.m sub, .m sup { font-size: 0.72em; line-height: 0; }
+.m .rm { font-family: var(--font-body); font-style: normal; font-size: 0.9em; }
+.ms { font-family: 'Noto Sans Math', 'STIX Two Math', 'Cambria Math', serif; font-style: normal; white-space: nowrap; }
+sup.st { font-size: 0.72em; line-height: 0; }
+.bl { color: var(--blue); } .or { color: var(--orange); }
+
+/* ---------- hero ---------- */
+header.hero { padding-top: 3.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+.venue { font-size: 0.875rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--blue); }
+h1 { font-size: clamp(2rem, 4.8vw, 3.35rem); font-weight: 650; line-height: 1.08; letter-spacing: -0.022em; max-width: 24ch; }
+.nb { white-space: nowrap; }
+.authors { display: flex; flex-wrap: wrap; gap: 0.9rem 2.25rem; margin: 0; padding: 0; list-style: none; }
+.authors li { display: flex; flex-direction: column; line-height: 1.35; }
+.authors b { font-weight: 600; }
+.authors span { font-size: 0.875rem; color: var(--muted); }
+.lead { font-size: 1.3rem; line-height: 1.45; max-width: 40rem; letter-spacing: -0.005em; }
+.links { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.05rem; border-radius: 999px;
+  font: 600 0.95rem/1.2 var(--font-body); text-decoration: none; border: 1.5px solid var(--ink); color: var(--ink); background: var(--paper); cursor: pointer;
+}
+.btn:hover { background: var(--panel); }
+.btn.primary { background: var(--ink); color: #fff; }
+.btn.primary:hover { background: #26344A; }
+.btn[aria-disabled="true"], .btn.primary[aria-disabled="true"] { border-style: dashed; border-color: #9AA3B0; color: var(--muted); background: var(--paper); cursor: default; }
+.btn[aria-disabled="true"]:hover, .btn.primary[aria-disabled="true"]:hover { background: var(--paper); }
+.btn small { font-weight: 500; font-size: 0.8rem; }
+
+/* ---------- clips and figures ---------- */
+figure { margin: 0; }
+.clip video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #fff; border: 1px solid var(--hair); border-radius: 14px; }
+figcaption { margin-top: 0.6rem; font-size: 0.875rem; color: var(--muted); max-width: var(--prose); }
+.clip video { cursor: pointer; }
+.clip figcaption { max-width: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.25rem; }
+.ctl { display: flex; gap: 0.5rem; margin-left: auto; }
+.ctl button { font: 600 0.8125rem/1.2 var(--font-body); color: var(--ink); background: var(--paper); border: 1px solid var(--hair); border-radius: 999px; padding: 0.4rem 0.8rem; cursor: pointer; }
+.ctl button:hover { background: var(--panel); }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 0; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+.stats div { padding: 1.25rem 1.5rem 1.35rem 0; }
+.stats div + div { padding-left: 1.5rem; border-left: 1px solid var(--hair); }
+.stats dt { font-family: var(--font-display); font-size: clamp(1.7rem, 3.4vw, 2.5rem); font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; color: var(--blue); font-variant-numeric: tabular-nums; }
+.stats dd { margin: 0.35rem 0 0; font-size: 0.95rem; line-height: 1.45; color: var(--muted); max-width: 22rem; }
+
+/* ---------- sections ---------- */
+main { display: flex; flex-direction: column; gap: 4.5rem; padding-top: 2.5rem; padding-bottom: 4.5rem; }
+section { display: flex; flex-direction: column; gap: 1.25rem; scroll-margin-top: 1.5rem; }
+.kicker { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+h2 { font-size: clamp(1.5rem, 3vw, 2.05rem); font-weight: 650; line-height: 1.15; letter-spacing: -0.018em; max-width: 30ch; }
+.eq { overflow-x: auto; padding: 0.25rem 0 0.25rem 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem 2.5rem; }
+.note { font-size: 0.875rem; color: var(--muted); }
+.eq img { display: block; max-width: none; flex: none; }
+.pair { display: flex; flex-direction: column; gap: 2rem; }
+.props { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.7rem; max-width: var(--prose); }
+.props li { padding-left: 1rem; border-left: 3px solid var(--blue-soft); }
+
+/* ---------- results ---------- */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 40rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 0.8rem 1.25rem 0.8rem 0; border-bottom: 1px solid var(--hair); vertical-align: baseline; }
+thead th { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.04em; color: var(--muted); border-bottom: 1.5px solid var(--ink); padding-bottom: 0.55rem; }
+td.num, th.num { text-align: right; padding-right: 1.75rem; }
+td small { display: block; color: var(--muted); font-size: 0.8125rem; line-height: 1.4; }
+td:first-child small { white-space: nowrap; }
+td.ours { color: var(--blue); font-weight: 600; }
+td.ref { color: var(--orange); font-weight: 600; }
+td.big { font-family: var(--font-display); font-size: 1.45rem; font-weight: 650; letter-spacing: -0.015em; color: var(--blue); }
+.plots { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 2rem 2.5rem; align-items: start; }
+.plots img { display: block; width: 100%; max-width: 30rem; height: auto; }
+
+/* ---------- citation ---------- */
+.cite { position: relative; background: var(--panel); border-radius: 14px; padding: 1.25rem 1.5rem; max-width: var(--wide); }
+.cite pre { margin: 0; overflow-x: auto; font: 0.875rem/1.6 var(--font-mono); }
+.cite button { position: absolute; top: 0.85rem; right: 0.85rem; padding: 0.4rem 0.85rem; font-size: 0.8125rem; }
+
+@media (max-width: 40rem) {
+  header.hero { padding-top: 2.25rem; }
+  .stats { grid-template-columns: 1fr; }
+  .stats div, .stats div + div { padding: 1rem 0; border-left: 0; }
+  .stats div + div { border-top: 1px solid var(--hair); }
+  main { gap: 3.5rem; }
+  .cite button { position: static; margin-top: 0.9rem; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="venue">NeurIPS 2026</div>
+  <h1>Compact Representations of Impact-Based <span class="nb">Fair-Ranking</span> Policies</h1>
+  <ul class="authors">
+    <li><b>Yuki Uehara</b><span>Preferred Networks, Inc.</span></li>
+    <li><b>Naoki Nishimura</b><span>Recruit Co., Ltd.</span></li>
+    <li><b>Noriyoshi Sukegawa</b><span>Hosei University</span></li>
+    <li><b>Yuichi Takano</b><span>University of Tsukuba</span></li>
+  </ul>
+  <p class="lead">Impact-based fair-ranking policies are served as user-specific mixtures of deterministic rankings, which are costly to store and do not cover unseen users. A small mixture of item-indexed dual vectors preserves the fair-ranking objective and reduces deployment storage by up to 2,596×.</p>
+  <nav class="links" aria-label="Paper resources">
+    <!-- TODO: replace href="#" and remove aria-disabled once the paper link is public -->
+    <a class="btn primary" id="paper-link" href="#" aria-disabled="true">Paper <small>(link to be added)</small></a>
+    <a class="btn" href="https://github.com/yukiu00/Compact-Representations-of-Impact-Based-Fair-Ranking-Policies">Code</a>
+    <!-- TODO: link the 5-minute talk (NeurIPS page or video host) -->
+    <a class="btn" id="talk-link" href="#" aria-disabled="true">5-minute talk <small>(link to be added)</small></a>
+    <a class="btn" href="#bibtex">BibTeX</a>
+  </nav>
+
+  <figure class="clip">
+    <video id="teaser" muted loop playsinline autoplay preload="auto" poster="assets/teaser.jpg"
+           aria-label="40-second summary: a fair-ranking policy stored as a mixture of rankings grows with users times mixture size; storing one weight per item gives a ranking rule for any user and up to 2,596 times less storage.">
+      <source src="assets/teaser.mp4" type="video/mp4">
+    </video>
+    <figcaption>The paper in 40 seconds. No sound.</figcaption>
+  </figure>
+
+  <dl class="stats">
+    <div><dt>up to 2,596×</dt><dd>less deployment storage than a user-coupled mixture of rankings</dd></div>
+    <div><dt>≤ 0.16%</dt><dd>shortfall in the fair-ranking objective on three real-world datasets</dd></div>
+    <div><dt>32 vectors</dt><dd>a deployment representation independent of the user population, usable for unseen users</dd></div>
+  </dl>
+</header>
+
+<main>
+
+<section id="background">
+  <div class="kicker">Background</div>
+  <h2>Attention concentrates on a few highly ranked items</h2>
+  <p>On two-sided platforms such as e-commerce marketplaces, ranking policies allocate attention across large item catalogs. Because users examine only the top of a ranked list, attention concentrates on a small set of highly ranked items. Persistent disparities can discourage supply-side participation, shrink the available catalog, and ultimately weaken the long-run health of the platform itself.</p>
+  <figure class="clip">
+    <video muted loop playsinline preload="none" poster="assets/s2.jpg" aria-label="Animation: ranking by preference alone concentrates impact on a few items; a stochastic fair policy spreads it.">
+      <source src="assets/s2.mp4" type="video/mp4">
+    </video>
+  </figure>
+</section>
+
+<section id="setting">
+  <div class="kicker">Setting</div>
+  <h2>Impact-based fair ranking maximizes the Nash social welfare</h2>
+  <p>Consider <span class="m">m</span> users and <span class="m">n</span> items, where only the first <span class="m">K</span> positions of a ranking are displayed. A stochastic ranking policy <span class="m">X</span> gives the probability <span class="m">X<sub>u,i,k</sub></span> that item <span class="m">i</span> is placed at position <span class="m">k</span> for user <span class="m">u</span>. The expected impact received by item <span class="m">i</span>, such as clicks, purchases, or revenue, is</p>
+  <div class="eq"><img src="assets/eq_imp.svg" width="348" height="68" alt="The impact of item i under X is defined as the sum over users u and positions k of e of k, times r of u and i, times X u i k"></div>
+  <p>where <span class="m">e(k)</span> is the exposure probability of position <span class="m">k</span> and <span class="m">r(u, i)</span> is the relevance score of item <span class="m">i</span> for user <span class="m">u</span>. Impact-based fair ranking (Saito &amp; Joachims, KDD 2022) maximizes the smoothed Nash social welfare (NSW)</p>
+  <div class="eq"><img src="assets/eq_nsw.svg" width="295" height="64" alt="F eta of X is defined as the sum over items i of the log of eta plus the impact of item i under X"></div>
+  <p>where <span class="m">η</span> &gt; 0 is a smoothing parameter. Maximizers of the NSW satisfy three guarantees:</p>
+  <ul class="props">
+    <li><b>Envy-freeness.</b> No item prefers another item's allocation.</li>
+    <li><b>Dominance over uniform ranking.</b> Every item receives at least its uniform-ranking impact.</li>
+    <li><b>Pareto optimality.</b> No alternative policy improves some items without reducing another item's impact.</li>
+  </ul>
+  <p class="note">The first two hold when <span class="m">K</span> = 1, and approximately for <span class="m">K</span> &gt; 1 when items have close substitutes in relevance. Slides of the original paper: <a href="https://speakerdeck.com/usaito/nsw-ranking-kdd22-en">Fair Ranking as Fair Division</a>.</p>
+</section>
+
+<section id="problem">
+  <div class="kicker">Problem</div>
+  <h2>Serving the policy takes a user-coupled mixture of rankings</h2>
+  <p>In deployment, the system must return one deterministic ranking per request, so a learned stochastic policy must be realized as an executable mixture of deterministic rankings:</p>
+  <div class="eq"><img src="assets/eq_mix.svg" width="152" height="68" alt="X equals the sum over t from 1 to T of alpha t times P t"></div>
+  <p>Each of the <span class="m">T</span> components <span class="m">P</span><sup class="st">(<span class="m">t</span>)</sup> contains one deterministic ranking per user, and <span class="m">α<sub>t</sub></span> is the probability of serving component <span class="m">t</span>. Deployment storage therefore scales with the number of users times the mixture size. For instance, the Frank–Wolfe-based OFFR algorithm (Usunier et al., 2022) accumulates one component per iteration and stores <span class="m or">T · m · K</span> ranking entries, which is <b class="or">4,915 MB</b> on Last.fm-15k.</p>
+  <p>This user-coupled representation also does not cover unseen users, forcing the system to use a fallback ranking rule rather than the learned fair-ranking policy.</p>
+  <figure class="clip">
+    <video muted loop playsinline preload="none" poster="assets/s3.jpg" aria-label="Animation: a mixture of rankings drawn as stacked tables of users by positions; storage grows with more components and more users.">
+      <source src="assets/s3.mp4" type="video/mp4">
+    </video>
+  </figure>
+</section>
+
+<section id="sparsity">
+  <div class="kicker">Exact sparsity</div>
+  <h2>Every optimum is a mixture of at most <span class="m">n</span> deterministic rankings</h2>
+  <p>The objective depends on a policy only through the <span class="m">n</span> item impacts. Because each impact is linear in the policy, the feasible impact vectors form a polytope, and optimality places the impact vector of an optimal policy on a face of it. By Carathéodory's theorem on that face, every optimal policy has an equivalent mixture with at most <span class="m">n</span> deterministic components that preserves every item's impact, and hence the objective value. This support bound is worst-case tight.</p>
+  <p>However, each component still contains one ranking per user, so deployment storage still grows with the number of users.</p>
+  <figure class="clip">
+    <video muted loop playsinline preload="none" poster="assets/s5.jpg" aria-label="Animation: the impact polytope for two items, the level curves of the objective, and the optimum on a face written as a mixture of its vertices.">
+      <source src="assets/s5.mp4" type="video/mp4">
+    </video>
+  </figure>
+</section>
+
+<section id="dual">
+  <div class="kicker">Dual representation</div>
+  <h2>One item-indexed dual vector is a ranking rule for any user</h2>
+  <p>We change what is stored. Attaching a Lagrange multiplier <span class="m">λ<sub>i</sub></span> to the impact of each item <span class="m">i</span> gives a dual problem whose variables are indexed only by items. Given the dual vector <span class="m">λ</span>, the remaining problem separates across users and is solved by sorting: user <span class="m">u</span> is shown the <span class="m">K</span> items with the largest scores</p>
+  <div class="eq"><img src="assets/eq_score.svg" width="182" height="27" alt="sigma u i of lambda is defined as lambda i times r of u and i"></div>
+  <p>Thus one dual vector defines a deterministic ranking rule for any user. At the dual optimum, <span class="m">λ<sub>i</sub></span> is large for items with low impact, so the rule moves such items up while <span class="m">r(u, i)</span> keeps the ranking personalized.</p>
+  <p>To serve either a training user or an unseen user, the system uses only the stored dual vectors and that user's relevance scores. No retraining is required.</p>
+  <figure class="clip">
+    <video muted loop playsinline preload="none" poster="assets/s7.jpg" aria-label="Animation: relevance times dual weight gives a score per item; sorting the scores gives the top K items; the same weights rank a new user.">
+      <source src="assets/s7.mp4" type="video/mp4">
+    </video>
+  </figure>
+</section>
+
+<section id="method">
+  <div class="kicker">Algorithm</div>
+  <h2>Learn dual vectors by mirror descent, then keep a weighted random subsample</h2>
+  <p>Each iteration ranks every user with the current dual vector, measures the resulting item impacts, and takes a subgradient step in log space, which keeps the dual variables positive. This is a mirror-descent method. One step costs <span class="m">O</span>(<span class="m">mn</span> log <span class="m">K</span>), and the weighted average of the policies along the trajectory converges to the optimum.</p>
+  <p>For serving, we retain only a sampled dual mixture: <span class="m">S</span> dual vectors drawn from the <span class="m">T</span> iterates by weighted random subsampling. Subsampling leaves the expected item impacts unchanged, and we prove a local preservation guarantee for the objective. The sampled dual mixture requires <span class="m">O</span>(<span class="m">Sn</span>) deployment storage, independent of the number of users, and serves any user in <span class="m">O</span>(<span class="m">n</span> log <span class="m">K</span>) time.</p>
+  <div class="pair">
+  <figure class="clip">
+    <video muted loop playsinline preload="none" poster="assets/s8.jpg" aria-label="Animation: the training loop. Dual weights, a sort per user, the resulting rankings, the measured item impacts, and the update.">
+      <source src="assets/s8.mp4" type="video/mp4">
+    </video>
+    <figcaption><span>Training by dual mirror descent.</span></figcaption>
+  </figure>
+  <figure class="clip">
+    <video muted loop playsinline preload="none" poster="assets/s9.jpg" aria-label="Animation: 32 dual vectors are sampled from a trajectory of 2,048; S times n numbers against T times m times K ranking entries.">
+      <source src="assets/s9.mp4" type="video/mp4">
+    </video>
+    <figcaption><span>Deployment: the sampled dual mixture.</span></figcaption>
+  </figure>
+  </div>
+</section>
+
+<section id="results">
+  <div class="kicker">Experiments</div>
+  <h2>Up to 2,596× less deployment storage while preserving the objective</h2>
+  <p>Ours is the sampled dual mixture with <span class="m">S</span> = 32, drawn from <span class="m">T</span> = 2,048 iterates. The reference is a user-coupled mixture: MOSEK+BvN where the conic solver is tractable, and OFFR at larger scale.</p>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Dataset</th><th>Reference</th><th class="num">Reference (MB)</th><th class="num">Ours (MB)</th><th class="num">Storage reduction</th><th class="num"><span class="m">F<sub>η</sub></span> shortfall</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>MovieLens-100K<small><span class="m">m</span> = 943 · <span class="m">n</span> = 1,574 · <span class="m">K</span> = 5</small></td><td>MOSEK+BvN<small>conic solver + Birkhoff–von Neumann decomposition</small></td><td class="num ref">207.7</td><td class="num ours">0.199</td><td class="num big">1,044×</td><td class="num">0.16%</td></tr>
+        <tr><td>MovieLens-1M<small><span class="m">m</span> = 3,000 · <span class="m">n</span> = 3,595 · <span class="m">K</span> = 40</small></td><td>OFFR</td><td class="num ref">983.1</td><td class="num ours">0.455</td><td class="num big">2,160×</td><td class="num">0.00%</td></tr>
+        <tr><td>Last.fm-15k<small><span class="m">m</span> = 15,000 · <span class="m">n</span> = 14,975 · <span class="m">K</span> = 40</small></td><td>OFFR</td><td class="num ref">4,915</td><td class="num ours">1.893</td><td class="num big">2,596×</td><td class="num">0.00%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Storage counts only the deployment storage of the fair-ranking layer.</p>
+  <p>Relative to OFFR, the reduction factors into about 64× fewer stored components from subsampling (<span class="m">T / S</span>) and 3–40× smaller components from the item-indexed dual representation (about <span class="m">mK / n</span>). The price is one top-<span class="m">K</span> selection over the user's relevance scores at serving time, with a 95th-percentile latency below 0.04 ms in our benchmark.</p>
+  <div class="plots">
+    <figure>
+      <img src="assets/fig1a.svg" width="415" height="334" alt="Plot of F eta retention against support size for Dual-Sample, Dual, OFFR-Sample and OFFR. The sampled variants reach about 100 percent near support size 32.">
+      <figcaption><b>32 samples are enough.</b> At <span class="m">S</span> = 32 the sampled mixtures retain more than 99% of the improvement over uniform ranking (0% = uniform ranking, 100% = MOSEK+BvN). Subsampling a trained trajectory (solid) is more effective than stopping the optimizer at the same support size (dashed).</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/fig1b.svg" width="455" height="334" alt="Plot of F eta on the full user set against the fraction of users used in training, for Uniform, MOSEK+BvN with uniform fallback, MOSEK+BvN on all users, and ours.">
+      <figcaption><b>The same dual mixture serves unseen users.</b> A dual mixture learned on a fraction of the users is applied to every user. Once the training population is moderately large, it exceeds MOSEK+BvN–Uniform, which serves stored rankings to the training users and uniform ranking to the rest.</figcaption>
+    </figure>
+  </div>
+  <p class="note">Both panels: MovieLens-100K with <span class="m">K</span> = 5. Error bars show ±1σ over five market seeds.</p>
+</section>
+
+<section id="bibtex">
+  <div class="kicker">Citation</div>
+  <h2>BibTeX</h2>
+  <div class="cite">
+    <pre><code id="bib">@inproceedings{uehara2026compact,
+  title     = {Compact Representations of Impact-Based Fair-Ranking Policies},
+  author    = {Uehara, Yuki and Nishimura, Naoki and Sukegawa, Noriyoshi and Takano, Yuichi},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2026}
+}</code></pre>
+    <button class="btn" id="copy" type="button">Copy</button>
+  </div>
+</section>
+
+</main>
+
+<script>
+// Clips play while they are on screen and pause when they leave it. Each has a small control row below it,
+// so nothing is drawn over the animation. A clip the reader pauses stays paused.
+(function () {
+  var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var vids = [].slice.call(document.querySelectorAll('.clip video'));
+  var play = function (v) { var p = v.play(); if (p && p.catch) p.catch(function () {}); };
+  vids.forEach(function (v) {
+    var fig = v.closest('figure'), cap = fig.querySelector('figcaption');
+    if (!cap) { cap = document.createElement('figcaption'); fig.appendChild(cap); }
+    var ctl = document.createElement('div'); ctl.className = 'ctl';
+    var tog = document.createElement('button'); tog.type = 'button';
+    var sync = function () { tog.textContent = v.paused ? 'Play' : 'Pause'; };
+    var toggle = function () { if (v.paused) { v.dataset.held = ''; play(v); } else { v.dataset.held = '1'; v.pause(); } };
+    tog.addEventListener('click', toggle); v.addEventListener('click', toggle);
+    v.addEventListener('play', sync); v.addEventListener('pause', sync);
+    ctl.appendChild(tog);
+    var enter = v.requestFullscreen || v.webkitRequestFullscreen || v.webkitEnterFullscreen;
+    if (enter) {
+      var full = document.createElement('button'); full.type = 'button'; full.textContent = 'Full screen';
+      full.addEventListener('click', function () { try { var r = enter.call(v); if (r && r.catch) r.catch(function () {}); } catch (e) {} });
+      ctl.appendChild(full);
+    }
+    cap.appendChild(ctl);
+    if (still) { v.removeAttribute('autoplay'); v.pause(); }
+    sync();
+  });
+  if (still || !('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      var v = e.target;
+      if (e.isIntersecting && e.intersectionRatio >= 0.5) { if (!v.dataset.held) play(v); }
+      else if (!v.paused) v.pause();
+    });
+  }, { threshold: [0, 0.5, 1] });
+  vids.forEach(function (v) { io.observe(v); });
+})();
+// links that are not public yet do nothing
+[].forEach.call(document.querySelectorAll('a[aria-disabled="true"]'), function (a) {
+  a.addEventListener('click', function (ev) { ev.preventDefault(); });
+});
+// copy the citation
+document.getElementById('copy').addEventListener('click', function () {
+  var btn = this, text = document.getElementById('bib').textContent;
+  var done = function (label) { btn.textContent = label; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { done('Copied'); }, function () { done('Select the text to copy'); });
+  else done('Select the text to copy');
+});
+</script>
+</body>
+</html>
